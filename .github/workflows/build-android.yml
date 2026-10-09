@@ -26,30 +26,26 @@ jobs:
           java-version: '17'
 
       # ========================================
-      # Android SDK - نصب دستی (بدون action)
+      # Android SDK
       # ========================================
       - name: Setup Android SDK
         run: |
-          # SDK رو دانلود می‌کنیم
           export ANDROID_HOME=$HOME/android-sdk
           mkdir -p $ANDROID_HOME/cmdline-tools
           cd $ANDROID_HOME/cmdline-tools
           
-          # Command-line tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
           unzip -q cmdline-tools.zip
           mv cmdline-tools latest
           rm cmdline-tools.zip
           
-          # اضافه کردن به PATH
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
 
       - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
+        run: yes | sdkmanager --licenses || true
 
       - name: Install Android packages
         run: |
@@ -94,20 +90,160 @@ jobs:
         working-directory: mobile
         run: cargo tauri android init
 
-      - name: Build Android APK
+      # ========================================
+      # ساخت Keystore (self-signed) و امضای APK
+      # ========================================
+      - name: Generate Keystore
         working-directory: mobile
-        run: cargo tauri android build --apk
+        run: |
+          keytool -genkey -v \
+            -keystore quickdrop.keystore \
+            -alias quickdrop \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass quickdrop123 \
+            -keypass quickdrop123 \
+            -dname "CN=QuickDrop, OU=Dev, O=QuickDrop, L=Tehran, ST=Tehran, C=IR"
 
+      - name: Configure Signing in build.gradle
+        working-directory: mobile
+        run: |
+          GRADLE_FILE="src-tauri/gen/android/app/build.gradle.kts"
+          
+          # اگه فایل kts نیست، دنبال groovy بگرد
+          if [ ! -f "$GRADLE_FILE" ]; then
+            GRADLE_FILE="src-tauri/gen/android/app/build.gradle"
+          fi
+          
+          echo "Using gradle file: $GRADLE_FILE"
+          
+          # اضافه کردن signing config
+          if [[ "$GRADLE_FILE" == *.kts ]]; then
+            # Kotlin DSL
+            python3 - <<EOF
+          import re
+          
+          with open("$GRADLE_FILE", "r") as f:
+              content = f.read()
+          
+          # اضافه کردن signingConfigs
+          signing_block = '''
+              signingConfigs {
+                  create("release") {
+                      storeFile = file("../../quickdrop.keystore")
+                      storePassword = "quickdrop123"
+                      keyAlias = "quickdrop"
+                      keyPassword = "quickdrop123"
+                  }
+              }
+          '''
+          
+          # اضافه کردن به android block
+          content = content.replace("android {", "android {" + signing_block, 1)
+          
+          # آپدیت release buildType
+          content = content.replace(
+              "buildTypes {",
+              '''buildTypes {
+                  getByName("release") {
+                      signingConfig = signingConfigs.getByName("release")
+                  }''',
+              1
+          )
+          
+          with open("$GRADLE_FILE", "w") as f:
+              f.write(content)
+          EOF
+          else
+            # Groovy DSL
+            python3 - <<EOF
+          import re
+          
+          with open("$GRADLE_FILE", "r") as f:
+              content = f.read()
+          
+          signing_block = '''
+              signingConfigs {
+                  release {
+                      storeFile file("../../quickdrop.keystore")
+                      storePassword "quickdrop123"
+                      keyAlias "quickdrop"
+                      keyPassword "quickdrop123"
+                  }
+              }
+          '''
+          
+          content = content.replace("android {", "android {" + signing_block, 1)
+          content = content.replace(
+              "buildTypes {",
+              '''buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }''',
+              1
+          )
+          
+          with open("$GRADLE_FILE", "w") as f:
+              f.write(content)
+          EOF
+          fi
+
+      - name: Build Signed Android APK
+        working-directory: mobile
+        run: |
+          cargo tauri android build --apk --target aarch64
+        env:
+          NDK_HOME: ${{ env.NDK_HOME }}
+
+      # ========================================
+      # پیدا کردن APK (اولویت به signed)
+      # ========================================
       - name: Find APK
         id: find_apk
         run: |
-          APK_PATH=$(find mobile/src-tauri/gen/android -name "*.apk" | head -n 1)
-          echo "APK_PATH=$APK_PATH" >> $GITHUB_OUTPUT
-          echo "Found APK: $APK_PATH"
+          # جستجو برای APK اولویت signed
+          SIGNED_APK=$(find mobile/src-tauri/gen/android -name "*release*.apk" ! -name "*unsigned*" | head -n 1)
+          
+          if [ -z "$SIGNED_APK" ]; then
+            SIGNED_APK=$(find mobile/src-tauri/gen/android -name "*.apk" ! -name "*unsigned*" | head -n 1)
+          fi
+          
+          if [ -z "$SIGNED_APK" ]; then
+            # اگه هیچ signed نبود، از unsigned استفاده کن
+            SIGNED_APK=$(find mobile/src-tauri/gen/android -name "*.apk" | head -n 1)
+          fi
+          
+          echo "APK_PATH=$SIGNED_APK" >> $GITHUB_OUTPUT
+          echo "Found APK: $SIGNED_APK"
+          ls -la "$SIGNED_APK"
 
-      - name: Upload APK
+      # ========================================
+      # نام‌گذاری و آپلود
+      # ========================================
+      - name: Rename APK
+        run: |
+          mkdir -p output
+          cp "${{ steps.find_apk.outputs.APK_PATH }}" "output/QuickDrop-${GITHUB_REF_NAME:-test}.apk"
+          ls -la output/
+
+      - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: quickdrop-apk
-          path: ${{ steps.find_apk.outputs.APK_PATH }}
+          name: quickdrop-apk-${{ github.ref_name }}
+          path: output/QuickDrop-*.apk
           retention-days: 30
+
+      # ========================================
+      # Release خودکار (اگه tag زده شده)
+      # ========================================
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: output/QuickDrop-*.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
