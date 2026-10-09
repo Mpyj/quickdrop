@@ -25,9 +25,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # ========================================
-      # Android SDK
-      # ========================================
       - name: Setup Android SDK
         run: |
           export ANDROID_HOME=$HOME/android-sdk
@@ -91,13 +88,14 @@ jobs:
         run: cargo tauri android init
 
       # ========================================
-      # ساخت Keystore (self-signed) و امضای APK
+      # ساخت Keystore تو مسیر درست
       # ========================================
       - name: Generate Keystore
         working-directory: mobile
         run: |
+          mkdir -p src-tauri/gen
           keytool -genkey -v \
-            -keystore quickdrop.keystore \
+            -keystore src-tauri/gen/quickdrop.keystore \
             -alias quickdrop \
             -keyalg RSA \
             -keysize 2048 \
@@ -111,23 +109,16 @@ jobs:
         run: |
           GRADLE_FILE="src-tauri/gen/android/app/build.gradle.kts"
           
-          # اگه فایل kts نیست، دنبال groovy بگرد
           if [ ! -f "$GRADLE_FILE" ]; then
             GRADLE_FILE="src-tauri/gen/android/app/build.gradle"
           fi
           
           echo "Using gradle file: $GRADLE_FILE"
           
-          # اضافه کردن signing config
-          if [[ "$GRADLE_FILE" == *.kts ]]; then
-            # Kotlin DSL
-            python3 - <<EOF
-          import re
-          
+          python3 - <<EOF
           with open("$GRADLE_FILE", "r") as f:
               content = f.read()
           
-          # اضافه کردن signingConfigs
           signing_block = '''
               signingConfigs {
                   create("release") {
@@ -139,10 +130,7 @@ jobs:
               }
           '''
           
-          # اضافه کردن به android block
           content = content.replace("android {", "android {" + signing_block, 1)
-          
-          # آپدیت release buildType
           content = content.replace(
               "buildTypes {",
               '''buildTypes {
@@ -155,72 +143,25 @@ jobs:
           with open("$GRADLE_FILE", "w") as f:
               f.write(content)
           EOF
-          else
-            # Groovy DSL
-            python3 - <<EOF
-          import re
-          
-          with open("$GRADLE_FILE", "r") as f:
-              content = f.read()
-          
-          signing_block = '''
-              signingConfigs {
-                  release {
-                      storeFile file("../../quickdrop.keystore")
-                      storePassword "quickdrop123"
-                      keyAlias "quickdrop"
-                      keyPassword "quickdrop123"
-                  }
-              }
-          '''
-          
-          content = content.replace("android {", "android {" + signing_block, 1)
-          content = content.replace(
-              "buildTypes {",
-              '''buildTypes {
-                  release {
-                      signingConfig signingConfigs.release
-                  }''',
-              1
-          )
-          
-          with open("$GRADLE_FILE", "w") as f:
-              f.write(content)
-          EOF
-          fi
 
       - name: Build Signed Android APK
         working-directory: mobile
         run: |
           cargo tauri android build --apk --target aarch64
-        env:
-          NDK_HOME: ${{ env.NDK_HOME }}
 
-      # ========================================
-      # پیدا کردن APK (اولویت به signed)
-      # ========================================
       - name: Find APK
         id: find_apk
         run: |
-          # جستجو برای APK اولویت signed
           SIGNED_APK=$(find mobile/src-tauri/gen/android -name "*release*.apk" ! -name "*unsigned*" | head -n 1)
           
           if [ -z "$SIGNED_APK" ]; then
             SIGNED_APK=$(find mobile/src-tauri/gen/android -name "*.apk" ! -name "*unsigned*" | head -n 1)
           fi
           
-          if [ -z "$SIGNED_APK" ]; then
-            # اگه هیچ signed نبود، از unsigned استفاده کن
-            SIGNED_APK=$(find mobile/src-tauri/gen/android -name "*.apk" | head -n 1)
-          fi
-          
           echo "APK_PATH=$SIGNED_APK" >> $GITHUB_OUTPUT
           echo "Found APK: $SIGNED_APK"
           ls -la "$SIGNED_APK"
 
-      # ========================================
-      # نام‌گذاری و آپلود
-      # ========================================
       - name: Rename APK
         run: |
           mkdir -p output
@@ -234,9 +175,6 @@ jobs:
           path: output/QuickDrop-*.apk
           retention-days: 30
 
-      # ========================================
-      # Release خودکار (اگه tag زده شده)
-      # ========================================
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
