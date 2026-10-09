@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a14">
+    <title>QuickDrop</title>
+    <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h1>QuickDrop</h1>
+                    <p>انتقال سریع فایل</p>
+                </div>
+            </div>
+            <div class="status-badge" id="status-badge">
+                <div class="status-dot"></div>
+                <span>آنلاین</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Connected Banner -->
+            <div class="connected-banner">
+                <div class="connected-icon">🖥️</div>
+                <div class="connected-info">
+                    <span class="connected-label">متصل به</span>
+                    <span class="connected-name">QuickDrop-PC</span>
+                </div>
+                <div class="connected-pulse"></div>
+            </div>
+
+            <!-- Actions: Send / Receive -->
+            <div class="actions-grid">
+                <button class="action-card send" id="upload-btn">
+                    <div class="action-card-icon">📤</div>
+                    <div class="action-card-body">
+                        <div class="action-card-title">ارسال به PC</div>
+                        <div class="action-card-desc">فایل از گوشی</div>
+                    </div>
+                </button>
+
+                <button class="action-card receive" id="download-btn">
+                    <div class="action-card-icon">📥</div>
+                    <div class="action-card-body">
+                        <div class="action-card-title">دریافت از PC</div>
+                        <div class="action-card-desc">فایل از کامپیوتر</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Shared Files from PC -->
+            <div class="shared-files-section">
+                <div class="shared-files-header">
+                    <div class="shared-files-title">
+                        <span>📦</span>
+                        <span>فایل‌های آماده از PC</span>
+                    </div>
+                    <div class="shared-files-badge" id="shared-count">0</div>
+                </div>
+                <div class="shared-files-list" id="shared-files-list">
+                    <div class="shared-empty">
+                        <div class="shared-empty-icon">✨</div>
+                        <p>هنوز فایلی از PC نفرستاده شده</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="info-card">
+                <div class="info-row">
+                    <span class="info-label">IP این دستگاه:</span>
+                    <span class="info-value" id="local-ip">---.---.---.---</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pair Code:</span>
+                    <span class="info-value" id="pair-code">----</span>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <span>QuickDrop v0.1.0</span>
+            <span class="dot">•</span>
+            <span>Mobile</span>
+        </footer>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

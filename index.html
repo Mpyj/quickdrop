@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickDrop</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/styles/panels.css">
+    <link rel="stylesheet" href="/styles/files.css">
+    <link rel="stylesheet" href="/styles/modals.css">
+    <link rel="stylesheet" href="/styles/toasts.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div data-tauri-drag-region class="drag-region"></div>
+
+            <div class="brand">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h1>QuickDrop</h1>
+                    <p>انتقال سریع فایل روی شبکه محلی</p>
+                </div>
+            </div>
+            <div class="status-badge" id="status-badge">
+                <div class="status-dot"></div>
+                <span id="status-text">در حال راه‌اندازی...</span>
+            </div>
+        </header>
+
+        <!-- Live Transfer Banner -->
+        <div class="live-transfer" id="live-transfer">
+            <div class="live-transfer-icon" id="live-icon">📥</div>
+            <div class="live-transfer-body">
+                <div class="live-transfer-header">
+                    <span class="live-transfer-title" id="live-title">در حال دریافت</span>
+                    <span class="live-transfer-percent" id="live-percent">0%</span>
+                </div>
+                <div class="live-progress-bar">
+                    <div class="live-progress-fill" id="live-progress-fill"></div>
+                </div>
+                <div class="live-transfer-stats">
+                    <span id="live-size">0 B / 0 B</span>
+                    <span id="live-speed">0 B/s</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Left: QR -->
+            <section class="panel qr-panel">
+                <div class="panel-header">
+                    <h2>📱 اتصال از گوشی</h2>
+                    <p>QR رو اسکن کن</p>
+                </div>
+                <div class="qr-container">
+                    <div class="qr-frame">
+                        <div class="qr-loading" id="qr-loading">
+                            <div class="spinner"></div>
+                        </div>
+                        <div class="qr-content" id="qr-content"></div>
+                    </div>
+                </div>
+                <div class="divider"><span>یا با Pair Code</span></div>
+                <div class="pair-code-section">
+                    <div class="pair-code" id="pair-code">- - - -</div>
+                    <button class="copy-btn" id="copy-pair-btn" title="کپی">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right: Info + Share -->
+            <section class="panel info-panel" id="drop-zone">
+                <div class="panel-header">
+                    <h2>🖥️ این دستگاه</h2>
+                    <p>اطلاعات اتصال و تنظیمات</p>
+                </div>
+
+                <div class="info-list">
+                    <div class="info-item">
+                        <div class="info-icon">🌐</div>
+                        <div class="info-body">
+                            <span class="info-label">IP آدرس</span>
+                            <span class="info-value" id="lan-ip">---.---.---.---</span>
+                        </div>
+                        <button class="copy-btn small" data-copy="lan-ip" title="کپی">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon">🔌</div>
+                        <div class="info-body">
+                            <span class="info-label">پورت</span>
+                            <span class="info-value">8080</span>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon">📡</div>
+                        <div class="info-body">
+                            <span class="info-label">وضعیت سرور</span>
+                            <span class="info-value status-online" id="server-status">● آنلاین</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Path -->
+                <div class="save-path-section">
+                    <div class="save-path-header">
+                        <div class="save-path-icon">📁</div>
+                        <span class="save-path-label">مسیر ذخیره‌ی دریافتی‌ها</span>
+                    </div>
+                    <div class="save-path-display" id="save-path">در حال بارگذاری...</div>
+                    <div class="save-path-actions">
+                        <button class="btn-change-path" id="change-path-btn">تغییر مسیر</button>
+                        <button class="btn-reset-path" id="reset-path-btn" title="برگرداندن به مسیر پیش‌فرض">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Share Files -->
+                <div class="share-section">
+                    <div class="share-section-header">
+                        <div class="share-icon">📤</div>
+                        <span class="share-label">ارسال فایل به گوشی</span>
+                    </div>
+                    <button class="btn-share" id="share-btn">
+                        <span class="btn-share-icon">+</span>
+                        انتخاب فایل‌ها
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom: Two columns -->
+        <div class="bottom-grid">
+            <section class="incoming-section">
+                <div class="incoming-header">
+                    <div class="incoming-title">
+                        <span class="incoming-icon">📥</span>
+                        <span>دریافتی‌ها (از گوشی)</span>
+                    </div>
+                    <div class="incoming-actions">
+                        <div class="incoming-badge" id="incoming-count">0</div>
+                        <button class="clear-btn" id="clear-incoming-btn" title="پاک کردن همه">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18"></path>
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="incoming-content" id="incoming-content">
+                    <div class="empty-state">
+                        <div class="empty-icon">✨</div>
+                        <p>هنوز فایلی دریافت نشده</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="incoming-section">
+                <div class="incoming-header">
+                    <div class="incoming-title">
+                        <span class="incoming-icon">📤</span>
+                        <span>ارسالی‌ها (به گوشی)</span>
+                    </div>
+                    <div class="incoming-actions">
+                        <div class="incoming-badge" id="shared-count">0</div>
+                        <button class="clear-btn" id="clear-shared-btn" title="پاک کردن همه">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18"></path>
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="incoming-content" id="shared-content">
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>هنوز فایلی برای ارسال نیست</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="app-footer">
+            <span>QuickDrop v0.1.0</span>
+            <span class="dot">•</span>
+            <span>Local Network Transfer</span>
+        </footer>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <canvas class="confetti-canvas" id="confetti-canvas"></canvas>
+    <div class="context-menu" id="context-menu"></div>
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal-content"></div>
+    </div>
+    <div class="success-overlay" id="success-overlay">
+        <div class="success-badge">
+            <div class="success-badge-icon" id="success-icon">✅</div>
+            <div class="success-badge-body">
+                <div class="success-badge-title" id="success-title">انتقال کامل شد</div>
+                <div class="success-badge-message" id="success-message">فایل با موفقیت منتقل شد</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/main.ts"></script>
+</body>
+</html>
