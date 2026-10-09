@@ -3,18 +3,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
 // ============================================
-// Types
-// ============================================
-
-interface SharedFile {
-    id: string;
-    name: string;
-    size: number;
-    path: string;
-    shared_at: number;
-}
-
-// ============================================
 // State
 // ============================================
 
@@ -23,7 +11,6 @@ const state = {
     pairCode: "----",
     token: "",
     mobileUrl: "",
-    sharedFiles: [] as SharedFile[],
 };
 
 // ============================================
@@ -39,22 +26,14 @@ function setText(id: string, text: string): void {
     if (el) el.textContent = text;
 }
 
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-function escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function showScreen(id: string): void {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const screen = $(id);
+    if (screen) screen.classList.add('active');
 }
 
 // ============================================
-// Load Info from Rust
+// Load Info
 // ============================================
 
 async function loadInfo(): Promise<void> {
@@ -69,25 +48,29 @@ async function loadInfo(): Promise<void> {
 
         console.log("📱 IP:", state.localIp);
         console.log("🔐 Pair Code:", state.pairCode);
-        console.log("🔑 Token:", state.token.substring(0, 8) + "...");
-        console.log("🔗 Mobile URL:", state.mobileUrl);
+        console.log("🔗 URL:", state.mobileUrl);
     } catch (e) {
         console.error("خطا در لود اطلاعات:", e);
     }
 }
 
 // ============================================
-// Actions (موقت)
+// Actions
 // ============================================
 
-function handleUpload(): void {
-    console.log("📤 Upload clicked");
-    alert("به‌زودی: ارسال فایل به PC");
+function handleSend(): void {
+    console.log("📤 Send clicked");
+    alert("به‌زودی: انتخاب فایل و ارسال");
 }
 
-function handleDownload(): void {
-    console.log("📥 Download clicked");
-    alert("به‌زودی: دریافت فایل از PC");
+function handleReceive(): void {
+    console.log("📥 Receive clicked");
+    alert("به‌زودی: دریافت فایل از دستگاه‌های دیگه");
+}
+
+function handleSettings(): void {
+    console.log("⚙️ Settings clicked");
+    alert("به‌زودی: تنظیمات");
 }
 
 // ============================================
@@ -95,8 +78,9 @@ function handleDownload(): void {
 // ============================================
 
 function setupHandlers(): void {
-    $("upload-btn")?.addEventListener("click", handleUpload);
-    $("download-btn")?.addEventListener("click", handleDownload);
+    $("send-btn")?.addEventListener("click", handleSend);
+    $("receive-btn")?.addEventListener("click", handleReceive);
+    $("settings-btn")?.addEventListener("click", handleSettings);
 }
 
 // ============================================
@@ -107,4 +91,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("🌐 QuickDrop Mobile loaded");
     setupHandlers();
     await loadInfo();
+    
+    // نمایش صفحه‌ی Home بعد از لود
+    setTimeout(() => {
+        showScreen('home-screen');
+    }, 500);
 });

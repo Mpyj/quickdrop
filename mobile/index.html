@@ -8,87 +8,77 @@
     <link rel="stylesheet" href="/src/styles.css">
 </head>
 <body>
-    <div class="app">
-        <!-- Header -->
+    <!-- ============ Screen: Loading ============ -->
+    <div id="loading-screen" class="screen active">
+        <div class="loader"></div>
+        <p>در حال آماده‌سازی...</p>
+    </div>
+
+    <!-- ============ Screen: Home ============ -->
+    <div id="home-screen" class="screen">
         <header class="app-header">
             <div class="brand">
                 <div class="brand-icon">⚡</div>
                 <div class="brand-text">
                     <h1>QuickDrop</h1>
-                    <p>انتقال سریع فایل</p>
+                    <p>انتقال فایل روی شبکه</p>
                 </div>
             </div>
-            <div class="status-badge" id="status-badge">
-                <div class="status-dot"></div>
-                <span>آنلاین</span>
-            </div>
+            <button class="icon-btn" id="settings-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </button>
         </header>
 
-        <!-- Main Content -->
         <main class="content">
-            <!-- Connected Banner -->
-            <div class="connected-banner">
-                <div class="connected-icon">🖥️</div>
-                <div class="connected-info">
-                    <span class="connected-label">متصل به</span>
-                    <span class="connected-name">QuickDrop-PC</span>
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="status-icon">📡</div>
+                <div class="status-info">
+                    <div class="status-title">آماده برای انتقال</div>
+                    <div class="status-subtitle" id="status-subtitle">در حال جستجو...</div>
                 </div>
-                <div class="connected-pulse"></div>
+                <div class="status-pulse"></div>
             </div>
 
-            <!-- Actions: Send / Receive -->
-            <div class="actions-grid">
-                <button class="action-card send" id="upload-btn">
-                    <div class="action-card-icon">📤</div>
-                    <div class="action-card-body">
-                        <div class="action-card-title">ارسال به PC</div>
-                        <div class="action-card-desc">فایل از گوشی</div>
+            <!-- Big Actions -->
+            <div class="big-actions">
+                <button class="big-action send" id="send-btn">
+                    <div class="big-action-icon">📤</div>
+                    <div class="big-action-content">
+                        <div class="big-action-title">ارسال فایل</div>
+                        <div class="big-action-desc">فایل رو به یه دستگاه دیگه بفرست</div>
                     </div>
+                    <div class="big-action-arrow">←</div>
                 </button>
 
-                <button class="action-card receive" id="download-btn">
-                    <div class="action-card-icon">📥</div>
-                    <div class="action-card-body">
-                        <div class="action-card-title">دریافت از PC</div>
-                        <div class="action-card-desc">فایل از کامپیوتر</div>
+                <button class="big-action receive" id="receive-btn">
+                    <div class="big-action-icon">📥</div>
+                    <div class="big-action-content">
+                        <div class="big-action-title">دریافت فایل</div>
+                        <div class="big-action-desc">فایل‌های ارسالی رو دریافت کن</div>
                     </div>
+                    <div class="big-action-arrow">←</div>
                 </button>
             </div>
 
-            <!-- Shared Files from PC -->
-            <div class="shared-files-section">
-                <div class="shared-files-header">
-                    <div class="shared-files-title">
-                        <span>📦</span>
-                        <span>فایل‌های آماده از PC</span>
-                    </div>
-                    <div class="shared-files-badge" id="shared-count">0</div>
+            <!-- Info Card (کوچیک) -->
+            <div class="info-mini">
+                <div class="info-mini-row">
+                    <span class="info-mini-label">IP:</span>
+                    <span class="info-mini-value" id="local-ip">---.---.---.---</span>
                 </div>
-                <div class="shared-files-list" id="shared-files-list">
-                    <div class="shared-empty">
-                        <div class="shared-empty-icon">✨</div>
-                        <p>هنوز فایلی از PC نفرستاده شده</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Info Card -->
-            <div class="info-card">
-                <div class="info-row">
-                    <span class="info-label">IP این دستگاه:</span>
-                    <span class="info-value" id="local-ip">---.---.---.---</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Pair Code:</span>
-                    <span class="info-value" id="pair-code">----</span>
+                <div class="info-mini-row">
+                    <span class="info-mini-label">Pair Code:</span>
+                    <span class="info-mini-value" id="pair-code">----</span>
                 </div>
             </div>
         </main>
 
         <footer class="app-footer">
             <span>QuickDrop v0.1.0</span>
-            <span class="dot">•</span>
-            <span>Mobile</span>
         </footer>
     </div>
 
