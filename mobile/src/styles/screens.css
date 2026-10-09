@@ -1,0 +1,195 @@
+/* ============================================
+   Screens
+   ============================================ */
+.screen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.screen.active {
+    display: flex;
+    opacity: 1;
+    animation: screenIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes screenIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading Screen */
+#loading-screen {
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+}
+
+.loader {
+    width: 56px;
+    height: 56px;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    position: relative;
+}
+
+.loader::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: rgba(102, 126, 234, 0.5);
+    animation: spin 1.6s linear infinite reverse;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+#loading-screen p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Screen Header (Send/Receive) */
+.screen-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10, 10, 20, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    flex-shrink: 0;
+}
+
+.screen-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: 18px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: inherit;
+}
+
+.back-btn:active {
+    background: var(--bg-card-hover);
+    transform: scale(0.95);
+}
+
+/* Content */
+.content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* App Header (Home) */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10, 10, 20, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    flex-shrink: 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+}
+
+.brand-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.brand-text p {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.icon-btn:active {
+    background: var(--bg-card-hover);
+    transform: scale(0.95);
+    color: var(--text-primary);
+}
+
+/* Footer */
+.app-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}

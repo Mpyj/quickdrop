@@ -2,10 +2,15 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a14">
     <title>QuickDrop</title>
-    <link rel="stylesheet" href="/src/styles.css">
+    <link rel="stylesheet" href="/src/styles/base.css">
+    <link rel="stylesheet" href="/src/styles/screens.css">
+    <link rel="stylesheet" href="/src/styles/components.css">
+    <link rel="stylesheet" href="/src/styles/home.css">
+    <link rel="stylesheet" href="/src/styles/send.css">
+    <link rel="stylesheet" href="/src/styles/receive.css">
 </head>
 <body>
     <!-- ============ Screen: Loading ============ -->
@@ -21,10 +26,10 @@
                 <div class="brand-icon">⚡</div>
                 <div class="brand-text">
                     <h1>QuickDrop</h1>
-                    <p>انتقال فایل روی شبکه</p>
+                    <p>انتقال سریع فایل</p>
                 </div>
             </div>
-            <button class="icon-btn" id="settings-btn">
+            <button class="icon-btn" id="settings-btn" title="تنظیمات">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -37,42 +42,43 @@
             <div class="status-card">
                 <div class="status-icon">📡</div>
                 <div class="status-info">
-                    <div class="status-title">آماده برای انتقال</div>
-                    <div class="status-subtitle" id="status-subtitle">در حال جستجو...</div>
+                    <div class="status-title" id="status-title">آماده برای انتقال</div>
+                    <div class="status-subtitle" id="status-subtitle">در حال راه‌اندازی سرور...</div>
                 </div>
                 <div class="status-pulse"></div>
             </div>
 
-            <!-- Big Actions -->
-            <div class="big-actions">
-                <button class="big-action send" id="send-btn">
-                    <div class="big-action-icon">📤</div>
-                    <div class="big-action-content">
-                        <div class="big-action-title">ارسال فایل</div>
-                        <div class="big-action-desc">فایل رو به یه دستگاه دیگه بفرست</div>
-                    </div>
-                    <div class="big-action-arrow">←</div>
-                </button>
-
-                <button class="big-action receive" id="receive-btn">
-                    <div class="big-action-icon">📥</div>
-                    <div class="big-action-content">
-                        <div class="big-action-title">دریافت فایل</div>
-                        <div class="big-action-desc">فایل‌های ارسالی رو دریافت کن</div>
-                    </div>
-                    <div class="big-action-arrow">←</div>
-                </button>
-            </div>
-
-            <!-- Info Card (کوچیک) -->
-            <div class="info-mini">
-                <div class="info-mini-row">
-                    <span class="info-mini-label">IP:</span>
-                    <span class="info-mini-value" id="local-ip">---.---.---.---</span>
+            <!-- Send Card -->
+            <button class="action-card send" id="send-btn">
+                <div class="action-icon">📤</div>
+                <div class="action-content">
+                    <div class="action-title">ارسال فایل</div>
+                    <div class="action-desc">فایل رو به دستگاه دیگه بفرست</div>
                 </div>
-                <div class="info-mini-row">
-                    <span class="info-mini-label">Pair Code:</span>
-                    <span class="info-mini-value" id="pair-code">----</span>
+                <div class="action-arrow">←</div>
+            </button>
+
+            <!-- Receive Card -->
+            <button class="action-card receive" id="receive-btn">
+                <div class="action-icon">📥</div>
+                <div class="action-content">
+                    <div class="action-title">دریافت فایل</div>
+                    <div class="action-desc">
+                        <span id="shared-count">0</span> فایل آماده دریافت
+                    </div>
+                </div>
+                <div class="action-arrow">←</div>
+            </button>
+
+            <!-- Info Card -->
+            <div class="info-card">
+                <div class="info-row">
+                    <span class="info-label">IP این دستگاه</span>
+                    <span class="info-value" id="local-ip">---.---.---.---</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pair Code</span>
+                    <span class="info-value" id="pair-code">----</span>
                 </div>
             </div>
         </main>
@@ -81,6 +87,50 @@
             <span>QuickDrop v0.1.0</span>
         </footer>
     </div>
+
+    <!-- ============ Screen: Send ============ -->
+    <div id="send-screen" class="screen">
+        <header class="screen-header">
+            <button class="back-btn" id="send-back">→</button>
+            <h2>ارسال فایل</h2>
+        </header>
+
+        <main class="content">
+            <div class="empty-state">
+                <div class="empty-icon">📤</div>
+                <h3>فایل رو انتخاب کن</h3>
+                <p>می‌تونی عکس، ویدیو، یا هر فایل دیگه بفرستی</p>
+                <button class="btn-primary" id="pick-file-btn">
+                    انتخاب فایل
+                </button>
+            </div>
+
+            <div class="file-preview" id="file-preview" style="display: none;">
+                <!-- فایل انتخاب شده اینجا نشون داده میشه -->
+            </div>
+        </main>
+    </div>
+
+    <!-- ============ Screen: Receive ============ -->
+    <div id="receive-screen" class="screen">
+        <header class="screen-header">
+            <button class="back-btn" id="receive-back">→</button>
+            <h2>دریافت فایل</h2>
+        </header>
+
+        <main class="content">
+            <div class="shared-list" id="shared-list">
+                <div class="empty-state">
+                    <div class="empty-icon">✨</div>
+                    <h3>هنوز فایلی نیست</h3>
+                    <p>وقتی کسی فایل بفرسته، اینجا ظاهر میشه</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
 
     <script type="module" src="/src/main.ts"></script>
 </body>
