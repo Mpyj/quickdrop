@@ -1,12 +1,9 @@
 name: Build Android APK
 
 on:
-  # وقتی tag مثل v0.1.0 می‌زنی
   push:
     tags:
       - 'v*'
-  
-  # یا دستی از GitHub UI
   workflow_dispatch:
 
 jobs:
@@ -14,42 +11,56 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      # 1. چک‌اوت کد
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. نصب Node.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: '20'
 
-      # 3. نصب JDK 17 (برای Android)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4. نصب Android SDK
+      # ========================================
+      # Android SDK - نصب دستی (بدون action)
+      # ========================================
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      # 5. نصب NDK
-      - name: Setup Android NDK
         run: |
-          echo "y" | sdkmanager "ndk;26.1.10909125" > /dev/null
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125" >> $GITHUB_ENV
-          echo "NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125" >> $GITHUB_ENV
+          # SDK رو دانلود می‌کنیم
+          export ANDROID_HOME=$HOME/android-sdk
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
+          
+          # Command-line tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools latest
+          rm cmdline-tools.zip
+          
+          # اضافه کردن به PATH
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
 
-      # 6. نصب Rust
+      - name: Accept Android licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
+      - name: Install Android packages
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;27.0.12077973"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
-      # 7. کش Rust
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -57,36 +68,36 @@ jobs:
             . -> target
             mobile/src-tauri -> target
 
-      # 8. نصب dependencies سیستمی
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev \
             librsvg2-dev patchelf
 
-      # 9. نصب npm dependencies
       - name: Install npm deps (root)
-        run: npm ci
+        run: npm install
 
       - name: Install npm deps (mobile)
         working-directory: mobile
-        run: npm ci
+        run: npm install
 
-      # 10. نصب Tauri CLI
+      - name: Build Frontend (mobile)
+        working-directory: mobile
+        run: npm run build
+
       - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2.0.0" --locked
+        uses: taiki-e/install-action@v2
+        with:
+          tool: tauri-cli
 
-      # 11. مقداردهی اولیه Android
       - name: Init Android
         working-directory: mobile
         run: cargo tauri android init
 
-      # 12. Build APK (debug برای تست)
       - name: Build Android APK
         working-directory: mobile
         run: cargo tauri android build --apk
 
-      # 13. پیدا کردن APK
       - name: Find APK
         id: find_apk
         run: |
@@ -94,20 +105,9 @@ jobs:
           echo "APK_PATH=$APK_PATH" >> $GITHUB_OUTPUT
           echo "Found APK: $APK_PATH"
 
-      # 14. آپلود به Artifacts
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: quickdrop-apk
           path: ${{ steps.find_apk.outputs.APK_PATH }}
           retention-days: 30
-
-      # 15. ساخت Release (اگه tag زده شده)
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ${{ steps.find_apk.outputs.APK_PATH }}
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
