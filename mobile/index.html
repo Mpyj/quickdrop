@@ -6,131 +6,308 @@
     <meta name="theme-color" content="#0a0a14">
     <title>QuickDrop</title>
     <link rel="stylesheet" href="/src/styles/base.css">
-    <link rel="stylesheet" href="/src/styles/screens.css">
     <link rel="stylesheet" href="/src/styles/components.css">
-    <link rel="stylesheet" href="/src/styles/home.css">
-    <link rel="stylesheet" href="/src/styles/send.css">
-    <link rel="stylesheet" href="/src/styles/receive.css">
+    <link rel="stylesheet" href="/src/styles/screens.css">
 </head>
 <body>
-    <!-- ============ Screen: Loading ============ -->
-    <div id="loading-screen" class="screen active">
-        <div class="loader"></div>
-        <p>در حال آماده‌سازی...</p>
-    </div>
+    <div class="app">
 
-    <!-- ============ Screen: Home ============ -->
-    <div id="home-screen" class="screen">
-        <header class="app-header">
-            <div class="brand">
-                <div class="brand-icon">⚡</div>
-                <div class="brand-text">
-                    <h1>QuickDrop</h1>
-                    <p>انتقال سریع فایل</p>
-                </div>
-            </div>
-            <button class="icon-btn" id="settings-btn" title="تنظیمات">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-            </button>
-        </header>
-
-        <main class="content">
-            <!-- Status Card -->
-            <div class="status-card">
-                <div class="status-icon">📡</div>
-                <div class="status-info">
-                    <div class="status-title" id="status-title">آماده برای انتقال</div>
-                    <div class="status-subtitle" id="status-subtitle">در حال راه‌اندازی سرور...</div>
-                </div>
-                <div class="status-pulse"></div>
-            </div>
-
-            <!-- Send Card -->
-            <button class="action-card send" id="send-btn">
-                <div class="action-icon">📤</div>
-                <div class="action-content">
-                    <div class="action-title">ارسال فایل</div>
-                    <div class="action-desc">فایل رو به دستگاه دیگه بفرست</div>
-                </div>
-                <div class="action-arrow">←</div>
-            </button>
-
-            <!-- Receive Card -->
-            <button class="action-card receive" id="receive-btn">
-                <div class="action-icon">📥</div>
-                <div class="action-content">
-                    <div class="action-title">دریافت فایل</div>
-                    <div class="action-desc">
-                        <span id="shared-count">0</span> فایل آماده دریافت
+        <!-- ========================================
+             Screen 1: Landing
+             ======================================== -->
+        <div id="landing-screen" class="screen active">
+            <header class="app-header">
+                <div class="brand">
+                    <div class="brand-icon">⚡</div>
+                    <div class="brand-text">
+                        <h1>QuickDrop</h1>
+                        <p>انتقال سریع فایل</p>
                     </div>
                 </div>
-                <div class="action-arrow">←</div>
-            </button>
-
-            <!-- Info Card -->
-            <div class="info-card">
-                <div class="info-row">
-                    <span class="info-label">IP این دستگاه</span>
-                    <span class="info-value" id="local-ip">---.---.---.---</span>
+                <div class="status-badge" id="status-badge">
+                    <div class="status-dot"></div>
+                    <span id="status-text">آماده</span>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Pair Code</span>
-                    <span class="info-value" id="pair-code">----</span>
+            </header>
+
+            <main class="content">
+                <div class="hero">
+                    <div class="hero-icon">📁</div>
+                    <h2>انتقال فایل بدون اینترنت</h2>
+                    <p>بین گوشی، لپ‌تاپ و تبلت</p>
                 </div>
-            </div>
-        </main>
 
-        <footer class="app-footer">
-            <span>QuickDrop v0.1.0</span>
-        </footer>
-    </div>
+                <div class="actions">
+                    <button class="action-card send" id="landing-send-btn">
+                        <div class="action-card-icon">📤</div>
+                        <div class="action-card-body">
+                            <div class="action-card-title">ارسال فایل</div>
+                            <div class="action-card-desc">فایل رو به دستگاه دیگه بفرست</div>
+                        </div>
+                        <div class="action-card-arrow">←</div>
+                    </button>
 
-    <!-- ============ Screen: Send ============ -->
-    <div id="send-screen" class="screen">
-        <header class="screen-header">
-            <button class="back-btn" id="send-back">→</button>
-            <h2>ارسال فایل</h2>
-        </header>
+                    <button class="action-card receive" id="landing-receive-btn">
+                        <div class="action-card-icon">📥</div>
+                        <div class="action-card-body">
+                            <div class="action-card-title">دریافت فایل</div>
+                            <div class="action-card-desc">
+                                <span id="shared-count">0</span> فایل آماده دریافت
+                            </div>
+                        </div>
+                        <div class="action-card-arrow">←</div>
+                    </button>
 
-        <main class="content">
-            <div class="empty-state">
-                <div class="empty-icon">📤</div>
-                <h3>فایل رو انتخاب کن</h3>
-                <p>می‌تونی عکس، ویدیو، یا هر فایل دیگه بفرستی</p>
-                <button class="btn-primary" id="pick-file-btn">
-                    انتخاب فایل
+                    <button class="action-card qr" id="landing-qr-btn">
+                        <div class="action-card-icon">🔗</div>
+                        <div class="action-card-body">
+                            <div class="action-card-title">اتصال با QR Code</div>
+                            <div class="action-card-desc">اتصال دستی به دستگاه</div>
+                        </div>
+                        <div class="action-card-arrow">←</div>
+                    </button>
+                </div>
+            </main>
+
+            <footer class="app-footer">
+                <div class="device-info">
+                    <div class="device-info-item">
+                        <span class="device-info-label">IP:</span>
+                        <span class="device-info-value" id="local-ip">---.---.---.---</span>
+                    </div>
+                    <div class="device-info-item">
+                        <span class="device-info-label">Pair:</span>
+                        <span class="device-info-value" id="pair-code">----</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <!-- ========================================
+             Screen 2: Permissions
+             ======================================== -->
+        <div id="permissions-screen" class="screen">
+            <header class="wizard-header">
+                <button class="wizard-back-btn" data-back="landing">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
                 </button>
-            </div>
-
-            <div class="file-preview" id="file-preview" style="display: none;">
-                <!-- فایل انتخاب شده اینجا نشون داده میشه -->
-            </div>
-        </main>
-    </div>
-
-    <!-- ============ Screen: Receive ============ -->
-    <div id="receive-screen" class="screen">
-        <header class="screen-header">
-            <button class="back-btn" id="receive-back">→</button>
-            <h2>دریافت فایل</h2>
-        </header>
-
-        <main class="content">
-            <div class="shared-list" id="shared-list">
-                <div class="empty-state">
-                    <div class="empty-icon">✨</div>
-                    <h3>هنوز فایلی نیست</h3>
-                    <p>وقتی کسی فایل بفرسته، اینجا ظاهر میشه</p>
+                <h2>قبل از شروع</h2>
+                <div class="wizard-progress">
+                    <div class="wizard-step active"></div>
+                    <div class="wizard-step"></div>
+                    <div class="wizard-step"></div>
+                    <div class="wizard-step"></div>
                 </div>
-            </div>
-        </main>
-    </div>
+            </header>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toast-container"></div>
+            <main class="wizard-content">
+                <div class="wizard-hero">
+                    <div class="hero-icon">🔧</div>
+                    <h3>این تنظیمات رو روشن کن</h3>
+                    <p>برای پیدا کردن و اتصال به دستگاه‌های نزدیک</p>
+                </div>
+
+                <div class="permission-list">
+                    <div class="permission-item" id="perm-location">
+                        <div class="permission-icon">📍</div>
+                        <div class="permission-body">
+                            <div class="permission-title">Location</div>
+                            <div class="permission-desc">برای پیدا کردن دستگاه‌های نزدیک</div>
+                        </div>
+                        <button class="permission-btn" data-perm="location">
+                            Settings
+                        </button>
+                    </div>
+
+                    <div class="permission-item" id="perm-wifi">
+                        <div class="permission-icon">📶</div>
+                        <div class="permission-body">
+                            <div class="permission-title">Wi-Fi</div>
+                            <div class="permission-desc">برای اتصال به دستگاه‌ها</div>
+                        </div>
+                        <button class="permission-btn primary" data-perm="wifi">
+                            روشن کن
+                        </button>
+                    </div>
+
+                    <div class="permission-item" id="perm-bluetooth">
+                        <div class="permission-icon">🔵</div>
+                        <div class="permission-body">
+                            <div class="permission-title">Bluetooth</div>
+                            <div class="permission-desc">برای پیدا کردن دستگاه‌ها</div>
+                        </div>
+                        <button class="permission-btn primary" data-perm="bluetooth">
+                            روشن کن
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="wizard-footer">
+                <button class="wizard-btn primary" id="perm-next-btn" disabled>
+                    ادامه
+                </button>
+            </footer>
+        </div>
+
+        <!-- ========================================
+             Screen 3: Select Files
+             ======================================== -->
+        <div id="select-files-screen" class="screen">
+            <header class="wizard-header">
+                <button class="wizard-back-btn" data-back="permissions">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <h2>انتخاب فایل</h2>
+                <div class="wizard-progress">
+                    <div class="wizard-step done"></div>
+                    <div class="wizard-step active"></div>
+                    <div class="wizard-step"></div>
+                    <div class="wizard-step"></div>
+                </div>
+            </header>
+
+            <main class="wizard-content">
+                <div class="drop-zone" id="send-drop-zone">
+                    <div class="drop-zone-icon">📁</div>
+                    <h3>فایل رو انتخاب کن</h3>
+                    <p>می‌تونی چند تا فایل انتخاب کنی</p>
+                    <button class="wizard-btn primary" id="select-files-btn">
+                        انتخاب فایل‌ها
+                    </button>
+                    <input type="file" id="file-input" multiple style="display: none;">
+                </div>
+
+                <div class="selected-files" id="selected-files"></div>
+            </main>
+
+            <footer class="wizard-footer">
+                <button class="wizard-btn primary" id="files-next-btn" disabled>
+                    ادامه (<span id="files-count">0</span>)
+                </button>
+            </footer>
+        </div>
+
+        <!-- ========================================
+             Screen 4: Find Device
+             ======================================== -->
+        <div id="find-device-screen" class="screen">
+            <header class="wizard-header">
+                <button class="wizard-back-btn" data-back="select-files">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <h2>پیدا کردن دستگاه</h2>
+                <div class="wizard-progress">
+                    <div class="wizard-step done"></div>
+                    <div class="wizard-step done"></div>
+                    <div class="wizard-step active"></div>
+                    <div class="wizard-step"></div>
+                </div>
+            </header>
+
+            <main class="wizard-content">
+                <div class="discovery-tabs">
+                    <button class="discovery-tab active" data-tab="bluetooth">
+                        <span class="tab-icon">🔵</span>
+                        <span>Bluetooth</span>
+                    </button>
+                    <button class="discovery-tab" data-tab="qr">
+                        <span class="tab-icon">📱</span>
+                        <span>QR Code</span>
+                    </button>
+                </div>
+
+                <div class="discovery-panel active" id="bluetooth-panel">
+                    <div class="scan-status">
+                        <div class="scan-spinner"></div>
+                        <span>در حال جستجو...</span>
+                    </div>
+                    <div class="device-list" id="device-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📡</div>
+                            <p>در حال جستجوی دستگاه‌ها...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="discovery-panel" id="qr-panel">
+                    <div class="qr-container">
+                        <div class="qr-frame">
+                            <div class="qr-content" id="qr-content"></div>
+                        </div>
+                        <p class="qr-hint">QR Code رو با دستگاه دیگه اسکن کن</p>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="wizard-footer">
+                <button class="wizard-btn secondary" id="refresh-devices-btn">
+                    🔄 جستجوی مجدد
+                </button>
+            </footer>
+        </div>
+
+        <!-- ========================================
+             Screen 5: Transfer
+             ======================================== -->
+        <div id="transfer-screen" class="screen">
+            <header class="wizard-header">
+                <h2>در حال ارسال</h2>
+                <div class="wizard-progress">
+                    <div class="wizard-step done"></div>
+                    <div class="wizard-step done"></div>
+                    <div class="wizard-step done"></div>
+                    <div class="wizard-step active"></div>
+                </div>
+            </header>
+
+            <main class="wizard-content">
+                <div class="transfer-hero">
+                    <div class="transfer-icon-large">📤</div>
+                    <h3 id="transfer-device-name">در حال اتصال...</h3>
+                    <p id="transfer-status">آماده‌سازی...</p>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progress-percent">0%</span>
+                        <span id="progress-size">0 MB / 0 MB</span>
+                    </div>
+                </div>
+
+                <div class="transfer-stats">
+                    <div class="stat">
+                        <span class="stat-label">سرعت</span>
+                        <span class="stat-value" id="transfer-speed">-- MB/s</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">زمان باقی‌مانده</span>
+                        <span class="stat-value" id="transfer-eta">--</span>
+                    </div>
+                </div>
+
+                <div class="transfer-files" id="transfer-files"></div>
+            </main>
+
+            <footer class="wizard-footer">
+                <button class="wizard-btn danger" id="cancel-transfer-btn">
+                    لغو انتقال
+                </button>
+            </footer>
+        </div>
+
+        <!-- Toast Container -->
+        <div class="toast-container" id="toast-container"></div>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
 </body>

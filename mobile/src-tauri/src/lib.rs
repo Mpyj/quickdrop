@@ -10,34 +10,110 @@ use quickdrop_core::{
 };
 
 // ============================================
-// Tauri Commands (Mobile-specific)
+// Tauri Commands — App Info
 // ============================================
 
-/// گرفتن IP محلی
 #[tauri::command]
-async fn get_local_ip() -> Result<String, String> {
-    match network::get_lan_ip() {
-        Ok(ip) => Ok(ip.to_string()),
-        Err(_) => Ok("127.0.0.1".to_string()),
-    }
+async fn get_app_info(state: tauri::State<'_, AppState>) -> Result<serde_json::Value, String> {
+    Ok(serde_json::json!({
+        "lan_ip": state.lan_ip.to_string(),
+        "pair_code": state.pair_code.to_string(),
+    }))
 }
 
-/// گرفتن Pair Code
+// ============================================
+// Tauri Commands — Platform (Android)
+// ============================================
+
+/// چک کردن وضعیت Bluetooth
+/// 
+/// روی Android، از طریق Tauri Plugin با Kotlin ارتباط برقرار می‌کنه.
+/// فعلاً mock هست.
 #[tauri::command]
-async fn get_pair_code(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    Ok(state.pair_code.to_string())
+async fn get_bluetooth_state() -> Result<String, String> {
+    println!("🔵 چک Bluetooth (mock: off)");
+    Ok("off".to_string())
 }
 
-/// گرفتن توکن
+/// چک کردن وضعیت Wi-Fi
 #[tauri::command]
-async fn get_token(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    Ok(state.token.to_string())
+async fn get_wifi_state() -> Result<String, String> {
+    println!("📶 چک Wi-Fi (mock: off)");
+    Ok("off".to_string())
 }
 
-/// گرفتن Mobile URL
+/// چک کردن permission Location
 #[tauri::command]
-async fn get_mobile_url(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    Ok(state.mobile_url())
+async fn check_location_permission() -> Result<String, String> {
+    println!("📍 چک Location (mock: not_requested)");
+    Ok("not_requested".to_string())
+}
+
+/// درخواست روشن کردن Bluetooth
+#[tauri::command]
+async fn request_enable_bluetooth() -> Result<(), String> {
+    println!("📡 درخواست روشن کردن Bluetooth");
+    // TODO: از طریق Intent
+    Ok(())
+}
+
+/// درخواست روشن کردن Wi-Fi
+#[tauri::command]
+async fn request_enable_wifi() -> Result<(), String> {
+    println!("📶 درخواست روشن کردن Wi-Fi");
+    // TODO: از طریق Intent
+    Ok(())
+}
+
+/// باز کردن Settings Location
+#[tauri::command]
+async fn open_location_settings() -> Result<(), String> {
+    println!("📍 باز کردن Settings Location");
+    Ok(())
+}
+
+// ============================================
+// Tauri Commands — Discovery
+// ============================================
+
+/// شروع scan دستگاه‌ها
+#[tauri::command]
+async fn start_device_scan() -> Result<Vec<serde_json::Value>, String> {
+    println!("🔍 شروع scan...");
+
+    // شبیه‌سازی تاخیر scan
+    tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+
+    // TODO: BLE واقعی
+    let devices = vec![
+        serde_json::json!({
+            "id": "demo-1",
+            "name": "Parsa-PC",
+            "type": "desktop",
+            "rssi": -42,
+        }),
+        serde_json::json!({
+            "id": "demo-2",
+            "name": "Samsung-A52",
+            "type": "mobile",
+            "rssi": -58,
+        }),
+    ];
+
+    println!("✅ {} دستگاه پیدا شد", devices.len());
+    Ok(devices)
+}
+
+/// اتصال به دستگاه
+#[tauri::command]
+async fn connect_to_device(device_id: String) -> Result<serde_json::Value, String> {
+    println!("🔗 اتصال به: {}", device_id);
+    tokio::time::sleep(tokio::time::Duration::from_millis(800)).await;
+
+    Ok(serde_json::json!({
+        "success": true,
+        "device_id": device_id,
+    }))
 }
 
 // ============================================
@@ -62,7 +138,6 @@ pub fn run() {
 
     // Config
     let config = ConfigManager::new();
-
     let saved_path = tauri::async_runtime::block_on(config.get_save_path());
     let saved_received: Vec<ReceivedFile> =
         tauri::async_runtime::block_on(config.get_received_files());
@@ -93,8 +168,6 @@ pub fn run() {
         saved_shared,
     );
 
-    println!("📱 Mobile URL: {}", state.mobile_url());
-
     // Server
     let server_state = state.clone();
     tauri::async_runtime::spawn(async move {
@@ -109,10 +182,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
         .invoke_handler(tauri::generate_handler![
-            get_local_ip,
-            get_pair_code,
-            get_token,
-            get_mobile_url,
+            get_app_info,
+            get_bluetooth_state,
+            get_wifi_state,
+            check_location_permission,
+            request_enable_bluetooth,
+            request_enable_wifi,
+            open_location_settings,
+            start_device_scan,
+            connect_to_device,
         ])
         .setup(move |_app| {
             println!("🌐 QuickDrop Mobile آماده‌ست");

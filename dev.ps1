@@ -1,13 +1,5 @@
 # ============================================
-# QuickDrop Dev Launcher
-# ============================================
-# 
-# این اسکریپت:
-# 1. پروسه‌های قبلی WebView2 رو می‌بنده
-# 2. پوشه‌ی داده‌ی WebView2 رو پاک می‌کنه
-# 3. پروژه رو اجرا می‌کنه
-#
-# استفاده: .\dev.ps1
+# QuickDrop Dev Launcher — Ultimate
 # ============================================
 
 Write-Host ""
@@ -17,37 +9,86 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # ============================================
-# 1. بستن پروسه‌های قبلی
+# [1/4] Close processes (verified)
 # ============================================
-Write-Host "[1/3] Closing previous processes..." -ForegroundColor Yellow
-taskkill /f /im msedgewebview2.exe 2>$null | Out-Null
-taskkill /f /im quickdrop.exe 2>$null | Out-Null
-Start-Sleep -Milliseconds 800
+Write-Host "[1/4] Closing processes..." -ForegroundColor Yellow
+
+# Kill quickdrop
+Get-Process -Name "quickdrop" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
+# Kill msedgewebview2
+Get-Process -Name "msedgewebview2" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
+# Wait for them to fully close
+$waitTime = 0
+while ($waitTime -lt 10) {
+    $remaining = Get-Process -Name "quickdrop","msedgewebview2" -ErrorAction SilentlyContinue
+    if (-not $remaining) {
+        break
+    }
+    Start-Sleep -Milliseconds 500
+    $waitTime++
+}
+
+# Force kill if still there
+$remaining = Get-Process -Name "quickdrop","msedgewebview2" -ErrorAction SilentlyContinue
+if ($remaining) {
+    Write-Host "      [WARN] Still $($remaining.Count) processes, force killing..." -ForegroundColor Yellow
+    $remaining | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+}
+
 Write-Host "      [OK] Processes closed" -ForegroundColor Green
 
 # ============================================
-# 2. پاک کردن پوشه‌های داده‌ی WebView2
+# [2/4] Check port 8080
 # ============================================
-Write-Host "[2/3] Clearing WebView2 data..." -ForegroundColor Yellow
+Write-Host "[2/4] Checking port 8080..." -ForegroundColor Yellow
 
-$pathsToClear = @(
-    "$env:LOCALAPPDATA\com.parsa.quickdrop",
-    "$env:LOCALAPPDATA\QuickDropWebView",
-    "$env:LOCALAPPDATA\Microsoft\EdgeWebView\EBWebView"
-)
-
-foreach ($path in $pathsToClear) {
-    if (Test-Path $path) {
-        Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "      [DEL] $path" -ForegroundColor Gray
+$portInUse = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue
+if ($portInUse) {
+    Write-Host "      [WARN] Port 8080 in use, killing..." -ForegroundColor Yellow
+    $ownerPid = $portInUse.OwningProcess | Select-Object -First 1
+    if ($ownerPid) {
+        Stop-Process -Id $ownerPid -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
     }
 }
-Write-Host "      [OK] Cleanup done" -ForegroundColor Green
+
+Write-Host "      [OK] Port free" -ForegroundColor Green
 
 # ============================================
-# 3. اجرای پروژه
+# [3/4] Wait for file locks to release
 # ============================================
-Write-Host "[3/3] Running QuickDrop..." -ForegroundColor Yellow
+Write-Host "[3/4] Waiting for file locks..." -ForegroundColor Yellow
+
+$dllPath = "$PSScriptRoot\target\debug\deps\quickdrop_lib.dll"
+$maxWait = 10
+$waited = 0
+
+while ($waited -lt $maxWait) {
+    try {
+        # Try to open the file exclusively
+        $stream = [System.IO.File]::Open($dllPath, 'Open', 'ReadWrite', 'None')
+        $stream.Close()
+        break
+    }
+    catch {
+        Start-Sleep -Milliseconds 500
+        $waited++
+    }
+}
+
+if ($waited -ge $maxWait) {
+    Write-Host "      [WARN] File still locked after $maxWait seconds" -ForegroundColor Yellow
+} else {
+    Write-Host "      [OK] Files unlocked" -ForegroundColor Green
+}
+
+# ============================================
+# [4/4] Run project
+# ============================================
+Write-Host "[4/4] Running QuickDrop..." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""

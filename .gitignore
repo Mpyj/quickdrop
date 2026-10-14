@@ -53,3 +53,7 @@ config.json
 # GitHub Actions artifacts (موقت)
 # ============================================
 .github/artifacts/
+# WebView2 Fixed
+*.cab
+src-tauri/webview2-fixed/
+src-tauri/*.cab
