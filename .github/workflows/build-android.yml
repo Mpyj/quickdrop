@@ -1,54 +1,33 @@
 name: Build Android APK
 
-# ============================================
-# Triggers
-# ============================================
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
 
-# ============================================
-# Permissions (برای Create Release)
-# ============================================
 permissions:
   contents: write
 
-# ============================================
-# Jobs
-# ============================================
 jobs:
   build-android:
     runs-on: ubuntu-latest
     
     steps:
-      # ----------------------------------------
-      # 1. Checkout
-      # ----------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ----------------------------------------
-      # 2. Setup Node
-      # ----------------------------------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # ----------------------------------------
-      # 3. Setup Java
-      # ----------------------------------------
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # ----------------------------------------
-      # 4. Setup Android SDK
-      # ----------------------------------------
       - name: Setup Android SDK
         run: |
           export ANDROID_HOME=$HOME/android-sdk
@@ -65,31 +44,19 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
 
-      # ----------------------------------------
-      # 5. Accept Android licenses
-      # ----------------------------------------
       - name: Accept Android licenses
         run: yes | sdkmanager --licenses || true
 
-      # ----------------------------------------
-      # 6. Install Android packages
-      # ----------------------------------------
       - name: Install Android packages
         run: |
           sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;27.0.12077973"
           echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
 
-      # ----------------------------------------
-      # 7. Setup Rust
-      # ----------------------------------------
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
-      # ----------------------------------------
-      # 8. Rust Cache
-      # ----------------------------------------
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -97,53 +64,58 @@ jobs:
             . -> target
             mobile/src-tauri -> target
 
-      # ----------------------------------------
-      # 9. Install system dependencies
-      # ----------------------------------------
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev \
             librsvg2-dev patchelf
 
-      # ----------------------------------------
-      # 10. Install npm deps (root)
-      # ----------------------------------------
       - name: Install npm deps (root)
         run: npm install
 
-      # ----------------------------------------
-      # 11. Install npm deps (mobile)
-      # ----------------------------------------
       - name: Install npm deps (mobile)
         working-directory: mobile
         run: npm install
 
-      # ----------------------------------------
-      # 12. Build Frontend (mobile)
-      # ----------------------------------------
       - name: Build Frontend (mobile)
         working-directory: mobile
         run: npm run build
 
-      # ----------------------------------------
-      # 13. Install Tauri CLI
-      # ----------------------------------------
       - name: Install Tauri CLI
         uses: taiki-e/install-action@v2
         with:
           tool: tauri-cli
 
-      # ----------------------------------------
-      # 14. Init Android
-      # ----------------------------------------
       - name: Init Android
         working-directory: mobile
         run: cargo tauri android init
 
-      # ----------------------------------------
-      # 15. Generate Keystore
-      # ----------------------------------------
+      # ========================================
+      # 👈 تنظیم minSdkVersion روی 26
+      # ========================================
+      - name: Set minSdkVersion to 26
+        working-directory: mobile
+        run: |
+          GRADLE_FILE="src-tauri/gen/android/app/build.gradle.kts"
+          if [ ! -f "$GRADLE_FILE" ]; then
+            GRADLE_FILE="src-tauri/gen/android/app/build.gradle"
+          fi
+          
+          echo "Editing $GRADLE_FILE"
+          
+          # تغییر minSdk
+          sed -i 's/minSdk = 24/minSdk = 26/g' "$GRADLE_FILE" 2>/dev/null || true
+          sed -i 's/minSdkVersion 24/minSdkVersion 26/g' "$GRADLE_FILE" 2>/dev/null || true
+          
+          # چک کن
+          grep -i "minSdk" "$GRADLE_FILE" || echo "minSdk not found, checking other files..."
+          
+          # اگه توی gradle.properties هست
+          PROPS_FILE="src-tauri/gen/android/gradle.properties"
+          if [ -f "$PROPS_FILE" ]; then
+            echo "android.minSdkVersion=26" >> "$PROPS_FILE"
+          fi
+
       - name: Generate Keystore
         working-directory: mobile
         run: |
@@ -158,19 +130,13 @@ jobs:
             -keypass quickdrop123 \
             -dname "CN=QuickDrop, OU=Dev, O=QuickDrop, L=Tehran, ST=Tehran, C=IR"
 
-      # ----------------------------------------
-      # 16. Configure Signing in build.gradle
-      # ----------------------------------------
       - name: Configure Signing in build.gradle
         working-directory: mobile
         run: |
           GRADLE_FILE="src-tauri/gen/android/app/build.gradle.kts"
-          
           if [ ! -f "$GRADLE_FILE" ]; then
             GRADLE_FILE="src-tauri/gen/android/app/build.gradle"
           fi
-          
-          echo "Using gradle file: $GRADLE_FILE"
           
           python3 - <<EOF
           with open("$GRADLE_FILE", "r") as f:
@@ -201,42 +167,26 @@ jobs:
               f.write(content)
           EOF
 
-      # ----------------------------------------
-      # 17. Build Signed Android APK
-      # ----------------------------------------
       - name: Build Signed Android APK
         working-directory: mobile
         run: |
           cargo tauri android build --apk --target aarch64
 
-      # ----------------------------------------
-      # 18. Find APK
-      # ----------------------------------------
       - name: Find APK
         id: find_apk
         run: |
           SIGNED_APK=$(find mobile/src-tauri/gen/android -name "*release*.apk" ! -name "*unsigned*" | head -n 1)
-          
           if [ -z "$SIGNED_APK" ]; then
             SIGNED_APK=$(find mobile/src-tauri/gen/android -name "*.apk" ! -name "*unsigned*" | head -n 1)
           fi
-          
           echo "APK_PATH=$SIGNED_APK" >> $GITHUB_OUTPUT
           echo "Found APK: $SIGNED_APK"
-          ls -la "$SIGNED_APK"
 
-      # ----------------------------------------
-      # 19. Rename APK
-      # ----------------------------------------
       - name: Rename APK
         run: |
           mkdir -p output
           cp "${{ steps.find_apk.outputs.APK_PATH }}" "output/QuickDrop-${GITHUB_REF_NAME:-test}.apk"
-          ls -la output/
 
-      # ----------------------------------------
-      # 20. Upload APK as Artifact
-      # ----------------------------------------
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -244,9 +194,6 @@ jobs:
           path: output/QuickDrop-*.apk
           retention-days: 30
 
-      # ----------------------------------------
-      # 21. Create Release
-      # ----------------------------------------
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
