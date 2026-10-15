@@ -94,7 +94,6 @@ function showScreen(id: string): void {
 // ============================================
 
 function setupWizardNavigation(): void {
-    // Back buttons
     document.querySelectorAll('.wizard-back-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
             const target = (btn as HTMLElement).dataset.back;
@@ -150,7 +149,7 @@ function setupWizardNavigation(): void {
 }
 
 // ============================================
-// Permissions — با استفاده از blec
+// Permissions — چک واقعی
 // ============================================
 
 async function checkAllPermissions(): Promise<void> {
@@ -158,27 +157,42 @@ async function checkAllPermissions(): Promise<void> {
 
     try {
         // ============================================
-        // 1. BLE Permissions (از پلاگین blec)
+        // 1. گرفتن Permission های BLE (اگه داده نشده)
         // ============================================
-        // این تابع:
-        // - اگه Permission داده شده، بلافاصله برمی‌گرده
-        // - اگه داده نشده، از کاربر می‌پرسه
-        // - اگه رد شده، به Settings می‌فرسته
         await checkPermissions(true);
         console.log("✅ BLE Permissions گرفته شد");
 
         // ============================================
-        // 2. چک کردن وضعیت Bluetooth و Wi-Fi
+        // 2. چک کردن وضعیت واقعی Bluetooth
         // ============================================
-        permissionsState.bluetooth = "on";
-        permissionsState.wifi = "on";
+        const btState = await invoke<string>("get_bluetooth_state").catch((e) => {
+            console.error("خطا در get_bluetooth_state:", e);
+            return "unknown";
+        });
+
+        console.log("📡 Bluetooth state:", btState);
+        permissionsState.bluetooth = btState as any;
+
+        // ============================================
+        // 3. چک کردن وضعیت واقعی Wi-Fi
+        // ============================================
+        const wifiState = await invoke<string>("get_wifi_state").catch((e) => {
+            console.error("خطا در get_wifi_state:", e);
+            return "unknown";
+        });
+
+        console.log("📶 Wi-Fi state:", wifiState);
+        permissionsState.wifi = wifiState as any;
+
+        // ============================================
+        // 4. Location — چون permission گرفتیم
+        // ============================================
         permissionsState.location = "granted";
 
         updatePermissionsUI();
     } catch (e) {
         console.error("❌ خطا در چک permissions:", e);
         
-        // اگه کاربر Permission رو رد کرد
         permissionsState.location = "denied";
         permissionsState.bluetooth = "off";
         permissionsState.wifi = "off";
@@ -250,25 +264,24 @@ function setupPermissionHandlers(): void {
 
             try {
                 if (perm === "location") {
-                    // درخواست مجدد permission
-                    await checkPermissions(true);
-                } else if (perm === "wifi" || perm === "bluetooth") {
-                    // 👈 فقط checkPermissions — بدون requestPermission
-                    await checkPermissions(true);
-                    await checkAllPermissions();
-                    return;
+                    await invoke("open_location_settings").catch(() => {});
+                } else if (perm === "wifi") {
+                    await invoke("request_enable_wifi").catch(() => {});
+                } else if (perm === "bluetooth") {
+                    await invoke("request_enable_bluetooth").catch(() => {});
                 }
 
-                setTimeout(checkAllPermissions, 1000);
+                // بعد از ۱.۵ ثانیه، وضعیت رو دوباره چک کن
+                setTimeout(checkAllPermissions, 1500);
             } catch (e) {
-                console.error("خطا در درخواست permission:", e);
+                console.error("خطا:", e);
             }
         });
     });
 }
 
 // ============================================
-// Device Scan (BLE)
+// Device Scan
 // ============================================
 
 async function scanDevices(): Promise<void> {
@@ -373,7 +386,6 @@ function renderSelectedFiles(): void {
 async function handleSelectFiles(): Promise<void> {
     const fileInput = $("file-input") as HTMLInputElement;
     if (!fileInput) return;
-
     fileInput.click();
 }
 
@@ -429,7 +441,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setupPermissionHandlers();
     setupFileInput();
 
-    // Load app info
     setTimeout(async () => {
         try {
             const info = await invoke<InfoResponse>("get_app_info");
