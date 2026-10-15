@@ -18,7 +18,7 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 
-# BLE Plugin (با Android backend اختصاصی)
+# BLE Plugin
 tauri-plugin-blec = "0.16"
 
 # Shared Core
@@ -30,3 +30,7 @@ serde_json = "1"
 
 # Async
 tokio = { version = "1", features = ["full"] }
+
+# Android JNI
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"

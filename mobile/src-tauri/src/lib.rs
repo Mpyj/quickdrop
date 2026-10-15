@@ -22,65 +22,24 @@ async fn get_app_info(state: tauri::State<'_, AppState>) -> Result<serde_json::V
 }
 
 // ============================================
-// Platform Helper — JNI to Kotlin
-// ============================================
-
-#[cfg(target_os = "android")]
-mod android_helper {
-    use jni::objects::{JObject, JValue};
-    use jni::JavaVM;
-    
-    /// چک کردن وضعیت Bluetooth از طریق JNI به Kotlin
-    pub fn get_bluetooth_state() -> Result<String, String> {
-        // TODO: JNI پیاده‌سازی
-        // فعلاً mock
-        Ok("off".to_string())
-    }
-    
-    /// چک کردن وضعیت Wi-Fi از طریق JNI
-    pub fn get_wifi_state() -> Result<String, String> {
-        // TODO: JNI پیاده‌سازی
-        Ok("off".to_string())
-    }
-}
-
-// ============================================
 // Tauri Commands — Platform
 // ============================================
 
 /// چک کردن وضعیت Bluetooth
+/// 
+/// TODO: JNI به QuickDropPlugin.kt
+/// فعلاً "off" برمی‌گردونه تا کاربر خودش روشن کنه.
 #[tauri::command]
 async fn get_bluetooth_state() -> Result<String, String> {
-    #[cfg(target_os = "android")]
-    {
-        return android_helper::get_bluetooth_state();
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        // روی Windows از WinRT استفاده می‌کنیم
-        // (این تابع توی موبایل استفاده نمیشه)
-        return Ok("unsupported".to_string());
-    }
-
-    #[cfg(not(any(target_os = "android", target_os = "windows")))]
-    {
-        Ok("unsupported".to_string())
-    }
+    println!("🔵 چک Bluetooth (mock: off)");
+    Ok("off".to_string())
 }
 
 /// چک کردن وضعیت Wi-Fi
 #[tauri::command]
 async fn get_wifi_state() -> Result<String, String> {
-    #[cfg(target_os = "android")]
-    {
-        return android_helper::get_wifi_state();
-    }
-
-    #[cfg(not(target_os = "android"))]
-    {
-        Ok("unsupported".to_string())
-    }
+    println!("📶 چک Wi-Fi (mock: off)");
+    Ok("off".to_string())
 }
 
 /// چک کردن permission Location
@@ -93,12 +52,6 @@ async fn check_location_permission() -> Result<String, String> {
 #[tauri::command]
 async fn request_enable_bluetooth() -> Result<(), String> {
     println!("📡 درخواست روشن کردن Bluetooth");
-
-    #[cfg(target_os = "android")]
-    {
-        // TODO: Intent برای روشن کردن
-    }
-
     Ok(())
 }
 
@@ -106,12 +59,6 @@ async fn request_enable_bluetooth() -> Result<(), String> {
 #[tauri::command]
 async fn request_enable_wifi() -> Result<(), String> {
     println!("📶 درخواست روشن کردن Wi-Fi");
-
-    #[cfg(target_os = "android")]
-    {
-        // TODO: Intent
-    }
-
     Ok(())
 }
 
