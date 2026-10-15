@@ -27,9 +27,9 @@ interface SelectedFile {
 }
 
 interface PermissionsState {
-    location: "granted" | "denied" | "not_requested";
-    wifi: "on" | "off" | "unsupported" | "unknown";
-    bluetooth: "on" | "off" | "unsupported" | "unknown";
+    location: boolean;
+    wifi: boolean;
+    bluetooth: boolean;
 }
 
 // ============================================
@@ -47,9 +47,9 @@ const selectedFiles: SelectedFile[] = [];
 const scannedDevices: Device[] = [];
 
 const permissionsState: PermissionsState = {
-    location: "not_requested",
-    wifi: "unknown",
-    bluetooth: "unknown",
+    location: false,
+    wifi: false,
+    bluetooth: false,
 };
 
 // ============================================
@@ -103,7 +103,7 @@ function setupWizardNavigation(): void {
 
     $("landing-send-btn")?.addEventListener('click', () => {
         showScreen('permissions-screen');
-        checkAllPermissions();
+        requestBlePermissions();
     });
 
     $("landing-receive-btn")?.addEventListener('click', () => {
@@ -149,134 +149,130 @@ function setupWizardNavigation(): void {
 }
 
 // ============================================
-// Permissions — چک واقعی
+// Permissions — با تأیید دستی
 // ============================================
 
-async function checkAllPermissions(): Promise<void> {
-    console.log("🔍 چک کردن permissionها...");
+/// مرحله ۱: گرفتن Permission های BLE
+async function requestBlePermissions(): Promise<void> {
+    console.log("🔍 گرفتن BLE Permissions...");
 
     try {
-        // ============================================
-        // 1. گرفتن Permission های BLE (اگه داده نشده)
-        // ============================================
+        // این تابع خودش از کاربر می‌پرسه و به Settings می‌فرسته
         await checkPermissions(true);
         console.log("✅ BLE Permissions گرفته شد");
 
-        // ============================================
-        // 2. چک کردن وضعیت واقعی Bluetooth
-        // ============================================
-        const btState = await invoke<string>("get_bluetooth_state").catch((e) => {
-            console.error("خطا در get_bluetooth_state:", e);
-            return "unknown";
-        });
-
-        console.log("📡 Bluetooth state:", btState);
-        permissionsState.bluetooth = btState as any;
-
-        // ============================================
-        // 3. چک کردن وضعیت واقعی Wi-Fi
-        // ============================================
-        const wifiState = await invoke<string>("get_wifi_state").catch((e) => {
-            console.error("خطا در get_wifi_state:", e);
-            return "unknown";
-        });
-
-        console.log("📶 Wi-Fi state:", wifiState);
-        permissionsState.wifi = wifiState as any;
-
-        // ============================================
-        // 4. Location — چون permission گرفتیم
-        // ============================================
-        permissionsState.location = "granted";
-
+        // حالا UI رو آپدیت کن (اول همه false)
         updatePermissionsUI();
     } catch (e) {
-        console.error("❌ خطا در چک permissions:", e);
-        
-        permissionsState.location = "denied";
-        permissionsState.bluetooth = "off";
-        permissionsState.wifi = "off";
-        updatePermissionsUI();
+        console.error("❌ خطا در گرفتن permissions:", e);
     }
 }
+
+/// مرحله ۲: کاربر روی «روشن کن» می‌زنه
+async function handleTurnOnBluetooth(): Promise<void> {
+    console.log("🔵 درخواست روشن کردن Bluetooth");
+
+    try {
+        // این تابع یه Intent اندروید باز می‌کنه
+        // که پنجره‌ی روشن کردن Bluetooth رو نشون میده
+        await invoke("request_enable_bluetooth");
+    } catch (e) {
+        console.error("خطا:", e);
+    }
+}
+
+async function handleTurnOnWifi(): Promise<void> {
+    console.log("📶 درخواست روشن کردن Wi-Fi");
+
+    try {
+        await invoke("request_enable_wifi");
+    } catch (e) {
+        console.error("خطا:", e);
+    }
+}
+
+async function handleLocationSettings(): Promise<void> {
+    console.log("📍 باز کردن Settings Location");
+
+    try {
+        await invoke("open_location_settings");
+    } catch (e) {
+        console.error("خطا:", e);
+    }
+}
+
+/// کاربر تأیید می‌کنه
+function togglePermission(perm: "location" | "wifi" | "bluetooth"): void {
+    permissionsState[perm] = !permissionsState[perm];
+    updatePermissionsUI();
+}
+
+/// بعد از اینکه کاربر از Settings برگشت، چک می‌کنه
+/// که کدوم دکمه‌ها باید تیک بخورن
+function markAsOn(perm: "location" | "wifi" | "bluetooth"): void {
+    permissionsState[perm] = true;
+    updatePermissionsUI();
+}
+
+// ============================================
+// Permissions UI
+// ============================================
 
 function updatePermissionsUI(): void {
     // Location
     const locEl = $("perm-location");
-    const locBtn = locEl?.querySelector(".permission-btn") as HTMLElement;
-    if (permissionsState.location === "granted") {
+    if (permissionsState.location) {
         locEl?.classList.add("granted");
-        if (locBtn) locBtn.textContent = "✓";
     } else {
         locEl?.classList.remove("granted");
-        if (locBtn) locBtn.textContent = "Settings";
     }
 
     // Wi-Fi
     const wifiEl = $("perm-wifi");
-    const wifiBtn = wifiEl?.querySelector(".permission-btn") as HTMLElement;
-    if (permissionsState.wifi === "on") {
+    if (permissionsState.wifi) {
         wifiEl?.classList.add("granted");
-        if (wifiBtn) {
-            wifiBtn.textContent = "✓";
-            wifiBtn.classList.remove("primary");
-        }
     } else {
         wifiEl?.classList.remove("granted");
-        if (wifiBtn) {
-            wifiBtn.textContent = "روشن کن";
-            wifiBtn.classList.add("primary");
-        }
     }
 
     // Bluetooth
     const btEl = $("perm-bluetooth");
-    const btBtn = btEl?.querySelector(".permission-btn") as HTMLElement;
-    if (permissionsState.bluetooth === "on") {
+    if (permissionsState.bluetooth) {
         btEl?.classList.add("granted");
-        if (btBtn) {
-            btBtn.textContent = "✓";
-            btBtn.classList.remove("primary");
-        }
     } else {
         btEl?.classList.remove("granted");
-        if (btBtn) {
-            btBtn.textContent = "روشن کن";
-            btBtn.classList.add("primary");
-        }
     }
 
     // Next button
     const nextBtn = $("perm-next-btn") as HTMLButtonElement;
     if (nextBtn) {
-        const allOk =
-            permissionsState.location === "granted" &&
-            permissionsState.wifi === "on" &&
-            permissionsState.bluetooth === "on";
+        const allOk = permissionsState.location &&
+                      permissionsState.wifi &&
+                      permissionsState.bluetooth;
         nextBtn.disabled = !allOk;
     }
 }
 
 function setupPermissionHandlers(): void {
-    document.querySelectorAll(".permission-btn").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-            const perm = (btn as HTMLElement).dataset.perm;
+    // دکمه‌ی Location → Settings
+    document.querySelector('.permission-btn[data-perm="location"]')?.addEventListener("click", () => {
+        handleLocationSettings();
+        // بعد از برگشت از Settings، خودکار تأیید کن
+        setTimeout(() => markAsOn("location"), 2000);
+    });
 
-            try {
-                if (perm === "location") {
-                    await invoke("open_location_settings").catch(() => {});
-                } else if (perm === "wifi") {
-                    await invoke("request_enable_wifi").catch(() => {});
-                } else if (perm === "bluetooth") {
-                    await invoke("request_enable_bluetooth").catch(() => {});
-                }
+    // دکمه‌ی Wi-Fi → Intent
+    document.querySelector('.permission-btn[data-perm="wifi"]')?.addEventListener("click", async () => {
+        await handleTurnOnWifi();
+        // بعد از برگشت، تأیید کن
+        setTimeout(() => markAsOn("wifi"), 2000);
+    });
 
-                // بعد از ۱.۵ ثانیه، وضعیت رو دوباره چک کن
-                setTimeout(checkAllPermissions, 1500);
-            } catch (e) {
-                console.error("خطا:", e);
-            }
-        });
+    // دکمه‌ی Bluetooth → Intent
+    document.querySelector('.permission-btn[data-perm="bluetooth"]')?.addEventListener("click", async () => {
+        await handleTurnOnBluetooth();
+        // بعد از برگشت، تأیید کن
+        setTimeout(() => markAsOn("bluetooth"), 2000);
     });
 }
 
