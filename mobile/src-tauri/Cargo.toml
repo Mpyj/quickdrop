@@ -18,6 +18,9 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 
+# BLE Plugin (با Android backend اختصاصی)
+tauri-plugin-blec = "0.16"
+
 # Shared Core
 quickdrop-core = { path = "../../crates/quickdrop-core" }
 
@@ -27,20 +30,3 @@ serde_json = "1"
 
 # Async
 tokio = { version = "1", features = ["full"] }
-
-# Mobile-specific
-[target.'cfg(target_os = "android")'.dependencies]
-# بعداً: Bluetooth, Hotspot
-
-# ============================================
-# Android build settings
-# ============================================
-[package.metadata.android]
-package-name = "com.parsa.quickdrop"
-apk-name = "QuickDrop"
-version-code = 1
-version-name = "0.1.0"
-
-[package.metadata.android.sdk]
-min-sdk-version = 24      # Android 7.0
-target-sdk-version = 34   # Android 14

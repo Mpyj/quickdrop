@@ -1,6 +1,7 @@
 // QuickDrop Mobile - Frontend Logic
 
 import { invoke } from "@tauri-apps/api/core";
+import { checkPermissions, requestPermission } from "@mnlphlp/plugin-blec";
 
 // ============================================
 // Types
@@ -27,8 +28,8 @@ interface SelectedFile {
 
 interface PermissionsState {
     location: "granted" | "denied" | "not_requested";
-    wifi: "on" | "off" | "unsupported";
-    bluetooth: "on" | "off" | "unsupported";
+    wifi: "on" | "off" | "unsupported" | "unknown";
+    bluetooth: "on" | "off" | "unsupported" | "unknown";
 }
 
 // ============================================
@@ -47,8 +48,8 @@ const scannedDevices: Device[] = [];
 
 const permissionsState: PermissionsState = {
     location: "not_requested",
-    wifi: "off",
-    bluetooth: "off",
+    wifi: "unknown",
+    bluetooth: "unknown",
 };
 
 // ============================================
@@ -101,38 +102,31 @@ function setupWizardNavigation(): void {
         });
     });
 
-    // Landing: Send
     $("landing-send-btn")?.addEventListener('click', () => {
         showScreen('permissions-screen');
-        checkPermissions();
+        checkAllPermissions();
     });
 
-    // Landing: Receive
     $("landing-receive-btn")?.addEventListener('click', () => {
         showScreen('select-files-screen');
     });
 
-    // Landing: QR
     $("landing-qr-btn")?.addEventListener('click', () => {
         showScreen('find-device-screen');
         scanDevices();
     });
 
-    // Permissions: Next
     $("perm-next-btn")?.addEventListener('click', () => {
         showScreen('select-files-screen');
     });
 
-    // Select Files: Next
     $("files-next-btn")?.addEventListener('click', () => {
         showScreen('find-device-screen');
         scanDevices();
     });
 
-    // Select Files: Select
     $("select-files-btn")?.addEventListener('click', handleSelectFiles);
 
-    // Discovery Tabs
     document.querySelectorAll('.discovery-tab').forEach((tab) => {
         tab.addEventListener('click', () => {
             const tabId = (tab as HTMLElement).dataset.tab;
@@ -146,36 +140,51 @@ function setupWizardNavigation(): void {
         });
     });
 
-    // Refresh devices
     $("refresh-devices-btn")?.addEventListener('click', () => {
         scanDevices();
     });
 
-    // Cancel transfer
     $("cancel-transfer-btn")?.addEventListener('click', () => {
         showScreen('landing-screen');
     });
 }
 
 // ============================================
-// Permissions
+// Permissions — با استفاده از blec
 // ============================================
 
-async function checkPermissions(): Promise<void> {
-    try {
-        const [loc, wifi, bt] = await Promise.all([
-            invoke<string>("check_location_permission").catch(() => "not_requested"),
-            invoke<string>("get_wifi_state").catch(() => "off"),
-            invoke<string>("get_bluetooth_state").catch(() => "off"),
-        ]);
+async function checkAllPermissions(): Promise<void> {
+    console.log("🔍 چک کردن permissionها...");
 
-        permissionsState.location = loc as any;
-        permissionsState.wifi = wifi as any;
-        permissionsState.bluetooth = bt as any;
+    try {
+        // ============================================
+        // 1. BLE Permissions (از پلاگین blec)
+        // ============================================
+        // این تابع:
+        // - اگه Permission داده شده، بلافاصله برمی‌گرده
+        // - اگه داده نشده، از کاربر می‌پرسه
+        // - اگه رد شده، به Settings می‌فرسته 
+        await checkPermissions(true);
+        console.log("✅ BLE Permissions گرفته شد");
+
+        // ============================================
+        // 2. چک کردن وضعیت Bluetooth و Wi-Fi
+        // ============================================
+        // روی Android، اینا از طریق پلاگین یا Command گرفته میشن
+        // فعلاً چون BLE Permission گرفتیم، فرض می‌کنیم Bluetooth روشنه
+        permissionsState.bluetooth = "on";
+        permissionsState.wifi = "on";
+        permissionsState.location = "granted";
 
         updatePermissionsUI();
     } catch (e) {
-        console.error("خطا در چک permissions:", e);
+        console.error("❌ خطا در چک permissions:", e);
+        
+        // اگه کاربر Permission رو رد کرد
+        permissionsState.location = "denied";
+        permissionsState.bluetooth = "off";
+        permissionsState.wifi = "off";
+        updatePermissionsUI();
     }
 }
 
@@ -243,23 +252,26 @@ function setupPermissionHandlers(): void {
 
             try {
                 if (perm === "location") {
-                    await invoke("open_location_settings").catch(() => {});
-                } else if (perm === "wifi") {
-                    await invoke("request_enable_wifi").catch(() => {});
-                } else if (perm === "bluetooth") {
-                    await invoke("request_enable_bluetooth").catch(() => {});
+                    // درخواست مجدد permission
+                    await checkPermissions(true);
+                } else if (perm === "wifi" || perm === "bluetooth") {
+                    // درخواست Permission و اجازه‌ی دسترسی
+                    await requestPermission();
+                    // بعد از درخواست، وضعیت رو دوباره چک کن
+                    await checkAllPermissions();
+                    return;
                 }
 
-                setTimeout(checkPermissions, 1500);
+                setTimeout(checkAllPermissions, 1000);
             } catch (e) {
-                console.error("خطا:", e);
+                console.error("خطا در درخواست permission:", e);
             }
         });
     });
 }
 
 // ============================================
-// Device Scan
+// Device Scan (BLE)
 // ============================================
 
 async function scanDevices(): Promise<void> {
@@ -274,6 +286,7 @@ async function scanDevices(): Promise<void> {
     `;
 
     try {
+        // فعلاً mock — بعداً از blec برای scan واقعی استفاده می‌کنیم
         const devices = await invoke<Device[]>("start_device_scan");
         scannedDevices.length = 0;
         scannedDevices.push(...devices);
