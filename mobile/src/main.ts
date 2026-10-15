@@ -1,7 +1,7 @@
 // QuickDrop Mobile - Frontend Logic
 
 import { invoke } from "@tauri-apps/api/core";
-import { checkPermissions, requestPermission } from "@mnlphlp/plugin-blec";
+import { checkPermissions } from "@mnlphlp/plugin-blec";
 
 // ============================================
 // Types
@@ -163,15 +163,13 @@ async function checkAllPermissions(): Promise<void> {
         // این تابع:
         // - اگه Permission داده شده، بلافاصله برمی‌گرده
         // - اگه داده نشده، از کاربر می‌پرسه
-        // - اگه رد شده، به Settings می‌فرسته 
+        // - اگه رد شده، به Settings می‌فرسته
         await checkPermissions(true);
         console.log("✅ BLE Permissions گرفته شد");
 
         // ============================================
         // 2. چک کردن وضعیت Bluetooth و Wi-Fi
         // ============================================
-        // روی Android، اینا از طریق پلاگین یا Command گرفته میشن
-        // فعلاً چون BLE Permission گرفتیم، فرض می‌کنیم Bluetooth روشنه
         permissionsState.bluetooth = "on";
         permissionsState.wifi = "on";
         permissionsState.location = "granted";
@@ -255,9 +253,8 @@ function setupPermissionHandlers(): void {
                     // درخواست مجدد permission
                     await checkPermissions(true);
                 } else if (perm === "wifi" || perm === "bluetooth") {
-                    // درخواست Permission و اجازه‌ی دسترسی
-                    await requestPermission();
-                    // بعد از درخواست، وضعیت رو دوباره چک کن
+                    // 👈 فقط checkPermissions — بدون requestPermission
+                    await checkPermissions(true);
                     await checkAllPermissions();
                     return;
                 }
@@ -286,7 +283,6 @@ async function scanDevices(): Promise<void> {
     `;
 
     try {
-        // فعلاً mock — بعداً از blec برای scan واقعی استفاده می‌کنیم
         const devices = await invoke<Device[]>("start_device_scan");
         scannedDevices.length = 0;
         scannedDevices.push(...devices);
