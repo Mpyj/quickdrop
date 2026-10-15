@@ -5,7 +5,7 @@
 /* ============================================
    Landing Screen
    ============================================ */
-#landing-screen {
+#landing-screen.active {
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -89,10 +89,13 @@
 }
 
 /* ============================================
-   Wizard Screens (Permissions, Files, Device, Transfer)
+   Wizard Screens — Layout (فقط وقتی active هستن)
    ============================================ */
 
-.screen:not(#landing-screen) {
+#permissions-screen.active,
+#select-files-screen.active,
+#find-device-screen.active,
+#transfer-screen.active {
     display: flex;
     flex-direction: column;
     height: 100vh;
